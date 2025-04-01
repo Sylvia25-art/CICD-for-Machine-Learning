@@ -1,5 +1,5 @@
 import pandas as pd
-import skops.io as sio
+from skops.io import dump, load, get_untrusted_types
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -14,8 +14,8 @@ drug_df = drug_df.sample(frac=1)
 ## Train Test Split
 from sklearn.model_selection import train_test_split
 
-X = drug_df.drop("Drug", axis=1).values
-y = drug_df.Drug.values
+X = drug_df.drop(columns=["Drug"]).to_numpy()
+y = drug_df["Drug"].to_numpy()
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.3, random_state=125
@@ -33,14 +33,23 @@ transform = ColumnTransformer(
         ("num_scaler", StandardScaler(), num_col),
     ]
 )
+from tempfile import mkdtemp
+
+# Specify a temporary directory for caching
+cachedir = mkdtemp()
+
 pipe = Pipeline(
     steps=[
         ("preprocessing", transform),
-        ("model", RandomForestClassifier(n_estimators=10, random_state=125)),
-    ]
+        ("model", RandomForestClassifier(
+            n_estimators=10, 
+            random_state=125, 
+            min_samples_leaf=2,  # Added hyperparameter
+            max_features="sqrt"  # Added hyperparameter
+        )),
+    ],
+    memory=cachedir  # Enable caching
 )
-
-## Training
 pipe.fit(X_train, y_train)
 
 
@@ -67,4 +76,4 @@ with open("./Results/metrics.txt", "w") as outfile:
     outfile.write(f"\nAccuracy = {round(accuracy, 2)}, F1 Score = {round(f1, 2)}")
 
 ## Saving the model file
-sio.dump(pipe, "./Model/drug_pipeline.skops")
+dump(pipe, "./Model/drug_pipeline.skops")
