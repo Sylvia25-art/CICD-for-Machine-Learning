@@ -18,8 +18,8 @@ eval:
 	cml comment create report.md
 		
 update-branch:
-	git config --global user.name $(USER_NAME)
-	git config --global user.email $(USER_EMAIL)
+	git config --global user.name $(Sylvia25-art)
+	git config --global user.email $(srodrig82737@universidadean.edu.co)
 	git commit -am "Update with new results"
 	git push --force origin HEAD:update
 
